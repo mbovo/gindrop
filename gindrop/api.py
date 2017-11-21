@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, print_function
 import logging
-import time
 import json
 from gindrop import core, swarm
 from flask import Flask
@@ -31,6 +30,12 @@ def index():
 
 @app.route('/configs')
 def get_configs():
+    """
+    Retrieve all registerd configurations
+    ---
+    parameters: []
+    responses: {}
+     """
     cs = manager.get_configs()
     data = {'configs': []}
     for c in cs:
@@ -40,6 +45,15 @@ def get_configs():
 
 @app.route('/configs/<path:config_name>')
 def get_config(config_name):
+    """
+    Retrieve a specific configuration by name
+    ---
+    parameters:
+      - in: path
+        name: config_name
+        required: true
+    responses: {}
+     """
     logger.info("Reading config: " + config_name)
     c = manager.get_config_by_name(config_name)
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
