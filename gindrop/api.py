@@ -28,7 +28,7 @@ def index():
     return json.dumps({'msg': 'hello world'})
 
 
-@app.route('/configs')
+@app.route('/configs', methods=['GET'])
 def get_configs():
     """
     Retrieve all registerd configurations
@@ -43,7 +43,7 @@ def get_configs():
     return app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
 
 
-@app.route('/configs/<path:config_name>')
+@app.route('/configs/<string:config_name>')
 def get_config(config_name):
     """
     Retrieve a specific configuration by name
@@ -56,6 +56,15 @@ def get_config(config_name):
      """
     logger.info("Reading config: " + config_name)
     c = manager.get_config_by_name(config_name)
+    return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
+
+
+@app.route('/configs/<string:config_name>', methods=['PUT'])
+def set_config(config_name):
+    logger.info("Writing config: " + config_name)
+    labels = request.args.get('labels', False)
+    logger.info("Optional labels: " + labels)
+    c = manager.set_config(config_name, request.files['file'].read(), labels)
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 

@@ -23,5 +23,5 @@ class Manager(object):
         return client.configs.get(config_id)
 
     def set_config(self, name, data, labels):
-        cid =  client.configs.create(name, data, labels)
+        cid = client.configs.create(name=name, data=data)
         return self.get_config_by_id(cid)
