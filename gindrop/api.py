@@ -1,30 +1,30 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import json
-from gindrop import core, swarm
-from flask import Flask, request
-from flask_restful import Api, Resource
+from flask import Flask, request, redirect, url_for
 from flasgger import Swagger
+from gindrop import core, swarm
 
 logger = logging.getLogger(__name__)
 config = core.Config()
 
-app = Flask(__name__)
 logger.info('Init flask ')
+app = Flask(__name__)
+app.config['SWAGGER'] = {
+    "title": "Gindrop - API Wrapper",
+    "uiversion": 2,
+}
 
-api = Api(app)
-logger.info('Init API ')
-
-swagger = Swagger(app)
 logger.info('Init Swagger ')
+swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "version": "1.0"}})
 
-
-todos = {}
+logger.info('Init Manager')
 manager = swarm.Manager()
 
 
 @app.route('/')
 def index():
+    # return redirect(url_for('flasgger.apidocs'))
     return json.dumps({'msg': 'This is Gindrop'})
 
 
@@ -52,6 +52,7 @@ def get_config(config_name):
       - in: path
         name: config_name
         required: true
+        description: "Name of the configuration to retrieve"
     responses: {}
      """
     logger.info("Reading config: " + config_name)
@@ -101,3 +102,4 @@ def rem_config(config_name):
     logger.info("Delete config: " + config_name)
     ret = manager.rem_config(config_name)
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
+

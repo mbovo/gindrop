@@ -31,5 +31,5 @@ def set_sig_handler(funcname, avoid=['SIG_DFL', 'SIGSTOP', 'SIGKILL']):
 
 def main():
     set_sig_handler(sig_handler)
-    logger.info('Starting gevent on %s:%d', api.config.server, int(api.config.port))
+    logger.info('Starting Listening on %s:%d', api.config.server, int(api.config.port))
     http_server.serve_forever()
