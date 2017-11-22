@@ -7,7 +7,7 @@ from gindrop import api
 from gevent.wsgi import WSGIServer
 
 logger = logging.getLogger(__name__)
-http_server = WSGIServer((api.config.server, int(api.config.port)), api.app)
+http_server = WSGIServer((api.config.server, int(api.config.port)), api.app, log=logger)
 
 
 def sig_handler(signum, stack):
