@@ -25,7 +25,7 @@ manager = swarm.Manager()
 
 @app.route('/')
 def index():
-    return json.dumps({'msg': 'hello world'})
+    return json.dumps({'msg': 'This is Gindrop'})
 
 
 @app.route('/configs', methods=['GET'])

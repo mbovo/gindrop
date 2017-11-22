@@ -1,7 +1,13 @@
 import json
+from gindrop import api
 
 
 def test_index():
-    from gindrop import api
     j = json.loads(api.index())
-    assert j['msg'] == "hello world"
+    assert j['msg'] == "This is Gindrop"
+
+
+def test_configs():
+    j = api.get_configs()
+    print j
+    assert j['configs']
