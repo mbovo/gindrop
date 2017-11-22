@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import json
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request, redirect, url_for, Blueprint
 from flasgger import Swagger
 from gindrop import core, swarm
 
@@ -21,6 +21,12 @@ swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "ver
 logger.info('Init Manager')
 manager = swarm.Manager()
 
+v2 = Blueprint('v2', __name__)
+logger.info('Blueprint: ' + str(v2.name))
+
+@v2.route('/')
+def index2():
+    return json.dumps({'msg': 'This is Gindrop v2'})
 
 @app.route('/')
 def index():
@@ -29,6 +35,7 @@ def index():
 
 
 @app.route('/configs', methods=['GET'])
+@v2.route('/configs', methods=['GET'])
 def get_configs():
     """
     Retrieve all registerd configurations
@@ -103,3 +110,4 @@ def rem_config(config_name):
     ret = manager.rem_config(config_name)
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
 
+app.register_blueprint(v2, url_prefix='/v2')
