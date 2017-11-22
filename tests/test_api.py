@@ -9,5 +9,4 @@ def test_index():
 
 def test_configs():
     j = api.get_configs()
-    print j
-    assert j['configs']
+    assert json.loads(j.get_data())['configs']
