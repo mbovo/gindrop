@@ -79,8 +79,8 @@ def set_config(config_name):
     responses: {}
      """
     logger.info("Writing config: " + config_name)
-    #labels = request.args.get('labels', False)
-    #logger.info("Optional labels: " + labels)
+    # labels = request.args.get('labels', False)
+    # logger.info("Optional labels: " + labels)
     c = manager.set_config(config_name, request.files['file'].read(), "")
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
@@ -102,4 +102,3 @@ def rem_config(config_name):
     logger.info("Delete config: " + config_name)
     ret = manager.rem_config(config_name)
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
-

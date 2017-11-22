@@ -21,8 +21,17 @@ def test_config():
 
 def test_write_config():
 
+    api.app.config['TESTING'] = True
+    client = api.app.test_client()
+
+    # delete first if any zombie is left
+    client.delete('/configs/config_pytest')
+
     data = dict(
         file=(io.BytesIO(b'Test config content'), "tmp.confg"),
     )
-    response = api.app.put('/configs/config_pytest', content_type='multipart/form-data', data=data)
-    assert response.status == 200
+    response = client.put('/configs/config_pytest', content_type='multipart/form-data', data=data)
+    assert response.status == "200 OK"
+
+    # delete to cleanup
+    client.delete('/configs/config_pytest')
