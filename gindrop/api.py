@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 import logging
 import json
 from gindrop import core, swarm
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api, Resource
 from flasgger import Swagger
 
@@ -61,49 +61,43 @@ def get_config(config_name):
 
 @app.route('/configs/<string:config_name>', methods=['PUT'])
 def set_config(config_name):
+    """
+    Save a new config with given name
+    ---
+    parameters:
+      - in: path
+        name: config_name
+        type: string
+        required: true
+      - in: formData
+        name: file
+        type: file
+        required: true
+    consumes:
+      - application/json
+    responses: {}
+     """
     logger.info("Writing config: " + config_name)
-    labels = request.args.get('labels', False)
-    logger.info("Optional labels: " + labels)
-    c = manager.set_config(config_name, request.files['file'].read(), labels)
+    #labels = request.args.get('labels', False)
+    #logger.info("Optional labels: " + labels)
+    c = manager.set_config(config_name, request.files['file'].read(), "")
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
-class TodoSimple(Resource):
-
-    def get(self, id):
-        """
-        This examples uses FlaskRESTful Resource
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-          - in: path
-            name: id
-            type: string
-            required: true
-        responses: {}
-         """
-        return {id: todos[id]}
-
-    def put(self, id):
-        """
-        This examples uses FlaskRESTful Resource
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-          - in: path
-            name: id
-            type: string
-            required: true
-          - in: formData
-            name: data
-            type: string
-            required: true
-        consumes:
-          - application/json
-        responses: {}
-         """
-        logger.info(str(request))
-        todos[id] = request.form['data']
-        return {id: todos[id]}
-
-api.add_resource(TodoSimple, '/<string:id>')
+@app.route('/configs/<string:config_name>', methods=['DELETE'])
+def rem_config(config_name):
+    """
+    Remove config with given name
+    ---
+    parameters:
+      - in: path
+        name: config_name
+        type: string
+        required: true
+    consumes:
+      - application/json
+    responses: {}
+     """
+    logger.info("Delete config: " + config_name)
+    ret = manager.rem_config(config_name)
+    return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')

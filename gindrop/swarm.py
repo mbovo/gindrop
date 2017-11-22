@@ -25,3 +25,12 @@ class Manager(object):
     def set_config(self, name, data, labels):
         cid = client.configs.create(name=name, data=data)
         return self.get_config_by_id(cid)
+
+    def rem_config(self, config_name):
+        c = self.get_config_by_name(config_name)
+        ret = True
+        try:
+            c.remove()
+        except docker.errors.APIError:
+            ret = False
+        return ret
