@@ -1,30 +1,30 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import json
-from gindrop import core, swarm
-from flask import Flask
-from flask_restful import Api, Resource
+from flask import Flask, request, redirect, url_for
 from flasgger import Swagger
+from gindrop import core, swarm
 
 logger = logging.getLogger(__name__)
 config = core.Config()
 
-app = Flask(__name__)
 logger.info('Init flask ')
+app = Flask(__name__)
+app.config['SWAGGER'] = {
+    "title": "Gindrop - API Wrapper",
+    "uiversion": 2,
+}
 
-api = Api(app)
-logger.info('Init API ')
-
-swagger = Swagger(app)
 logger.info('Init Swagger ')
+swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "version": "1.0"}})
 
-
-todos = {}
+logger.info('Init Manager')
 manager = swarm.Manager()
 
 
 @app.route('/')
 def index():
+    # return redirect(url_for('flasgger.apidocs'))
     return json.dumps({'msg': 'This is Gindrop'})
 
 
@@ -52,6 +52,7 @@ def get_config(config_name):
       - in: path
         name: config_name
         required: true
+        description: "Name of the configuration to retrieve"
     responses: {}
      """
     logger.info("Reading config: " + config_name)
@@ -61,49 +62,29 @@ def get_config(config_name):
 
 @app.route('/configs/<string:config_name>', methods=['PUT'])
 def set_config(config_name):
+    """
+     Create new configuration
+     ---
+     parameters:
+       - in: path
+         name: config_name
+         type: string
+         description: "Name of the configuration to store (must be unique)"
+         required: true
+       - in: formData
+         name: labels
+         type: string
+         description: "Labels?"
+         required: true
+       - in: formData
+         name: file
+         type: file
+         description: "File to upload"
+         required: true
+     responses: {}
+      """
     logger.info("Writing config: " + config_name)
     labels = request.args.get('labels', False)
     logger.info("Optional labels: " + labels)
     c = manager.set_config(config_name, request.files['file'].read(), labels)
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
-
-
-class TodoSimple(Resource):
-
-    def get(self, id):
-        """
-        This examples uses FlaskRESTful Resource
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-          - in: path
-            name: id
-            type: string
-            required: true
-        responses: {}
-         """
-        return {id: todos[id]}
-
-    def put(self, id):
-        """
-        This examples uses FlaskRESTful Resource
-        It works also with swag_from, schemas and spec_dict
-        ---
-        parameters:
-          - in: path
-            name: id
-            type: string
-            required: true
-          - in: formData
-            name: data
-            type: string
-            required: true
-        consumes:
-          - application/json
-        responses: {}
-         """
-        logger.info(str(request))
-        todos[id] = request.form['data']
-        return {id: todos[id]}
-
-api.add_resource(TodoSimple, '/<string:id>')
