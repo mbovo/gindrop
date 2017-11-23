@@ -3,6 +3,9 @@ import pytest
 import io
 from gindrop import api
 
+api.app.config['TESTING'] = True
+client = api.app.test_client()
+
 
 def test_index():
     j = json.loads(api.index())
@@ -20,9 +23,6 @@ def test_config():
 
 
 def test_write_config():
-
-    api.app.config['TESTING'] = True
-    client = api.app.test_client()
 
     # delete first if any zombie is left
     client.delete('/configs/config_pytest')

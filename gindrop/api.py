@@ -33,10 +33,20 @@ def get_configs():
     """
     Retrieve all registerd configurations
     ---
-    parameters: []
+    parameters:
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: If the configuration is taken from encrypted ones 
     responses: {}
      """
-    cs = manager.get_configs()
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        cs = manager.get_secrets()
+    else:
+        cs = manager.get_configs()
     data = {'configs': []}
     for c in cs:
         data["configs"].append(c.attrs)
@@ -53,10 +63,20 @@ def get_config(config_name):
         name: config_name
         required: true
         description: "Name of the configuration to retrieve"
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: If the configuration is taken from encrypted ones 
     responses: {}
      """
     logger.info("Reading config: " + config_name)
-    c = manager.get_config_by_name(config_name)
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        c = manager.get_secret_by_name(config_name)
+    else:
+        c = manager.get_config_by_name(config_name)
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
@@ -74,6 +94,12 @@ def set_config(config_name):
         name: file
         type: file
         required: true
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: If the configuration is stored as encrypted 
     consumes:
       - application/json
     responses: {}
@@ -81,7 +107,12 @@ def set_config(config_name):
     logger.info("Writing config: " + config_name)
     # labels = request.args.get('labels', False)
     # logger.info("Optional labels: " + labels)
-    c = manager.set_config(config_name, request.files['file'].read(), "")
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        c = manager.set_secret(config_name, request.files['file'].read(), "")
+    else:
+        c = manager.set_config(config_name, request.files['file'].read(), "")
+
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
@@ -95,10 +126,23 @@ def rem_config(config_name):
         name: config_name
         type: string
         required: true
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: If the configuration is deleted from encrypted ones 
     consumes:
       - application/json
     responses: {}
      """
     logger.info("Delete config: " + config_name)
-    ret = manager.rem_config(config_name)
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        ret = manager.rem_secret(config_name)
+    else:
+        ret = manager.rem_config(config_name)
+
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
+
+
