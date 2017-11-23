@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, print_function
 from exceptions import ValueError
 import logging
 import docker
+import json
+import yaml
 
 client = docker.from_env()
 logger = logging.getLogger(__name__)
@@ -66,3 +68,9 @@ class Manager(object):
         except ValueError, docker.errors.APIError:
             ret = False
         return ret
+
+        # SECRETS ######
+
+    def deploy(self, data):
+        jdata = json.dumps(yaml.load(data))
+        return jdata

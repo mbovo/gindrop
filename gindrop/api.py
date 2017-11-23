@@ -144,3 +144,38 @@ def rem_config(config_name):
         ret = manager.rem_config(config_name)
 
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
+
+
+@app.route('/deploy/<string:service_name>', methods=['PUT'])
+def do_deploy(service_name):
+    """
+    Deploy a new service
+    ---
+    parameters:
+      - in: path
+        name: service_name
+        type: string
+        required: true
+        description: name assigned to the deployed service
+      - in: formData
+        name: file
+        type: file
+        required: true
+        description: file containing deployment parameters
+      - in: query
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+            - "DockerSwarm"
+        description: type of deployment file
+    consumes:
+      - application/json
+    responses: {}
+     """
+    data = request.files['file'].read()
+
+    jdata = manager.deploy(data)
+
+    return app.response_class(response=jdata, status=200, mimetype='application/json')
