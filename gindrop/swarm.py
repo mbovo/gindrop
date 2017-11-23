@@ -38,7 +38,6 @@ class Manager(object):
             ret = False
         return ret
 
-
         # SECRETS ######
 
     def get_secrets(self):

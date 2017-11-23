@@ -39,7 +39,7 @@ def get_configs():
         required: true
         schema:
           type: boolean
-        description: If the configuration is taken from encrypted ones 
+        description: Configuration taken from encrypted ones
     responses: {}
      """
     sec = request.args.get('crypt', 'false')
@@ -68,7 +68,7 @@ def get_config(config_name):
         required: true
         schema:
           type: boolean
-        description: If the configuration is taken from encrypted ones 
+        description: Configuration taken from encrypted ones
     responses: {}
      """
     logger.info("Reading config: " + config_name)
@@ -99,7 +99,7 @@ def set_config(config_name):
         required: true
         schema:
           type: boolean
-        description: If the configuration is stored as encrypted 
+        description: Configuration stored as encrypted
     consumes:
       - application/json
     responses: {}
@@ -131,7 +131,7 @@ def rem_config(config_name):
         required: true
         schema:
           type: boolean
-        description: If the configuration is deleted from encrypted ones 
+        description: Configuration deleted from encrypted ones
     consumes:
       - application/json
     responses: {}
@@ -144,5 +144,3 @@ def rem_config(config_name):
         ret = manager.rem_config(config_name)
 
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
-
-
