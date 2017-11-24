@@ -1,6 +1,7 @@
 import json
 import pytest
 import io
+import os
 from gindrop import api
 
 api.app.config['TESTING'] = True
@@ -56,10 +57,22 @@ def test_write_secrets():
     client.delete('/configs/config_pytest' + do_crypt)
 
     data = dict(
-        file=(io.BytesIO(b'Test config content'), "tmp.confg" + do_crypt),
+        file=(io.BytesIO(b'Test config content'), "tmp.cfg"),
     )
     response = client.put('/configs/config_pytest' + do_crypt, content_type='multipart/form-data', data=data)
     assert response.status == "200 OK"
 
     # delete to cleanup
     client.delete('/configs/config_pytest' + do_crypt)
+
+
+def test_deploy():
+
+    filename = os.path.join(os.path.dirname(__file__), 'files', 'deploy.yml')
+    with file(filename) as f:
+        deploy = f.read()
+    data = dict(
+        file=(io.BytesIO(deploy), "deploy.yml"),
+    )
+    response = client.put('/deploy/deploy_pytest', content_type='multipart/form-data', data=data)
+    assert response.status == "200 OK"
