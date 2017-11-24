@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import logging
 import json
-from flask import Flask, request, redirect, url_for, Blueprint
+from flask import Flask, request, redirect, url_for
 from flasgger import Swagger
 from gindrop import core, swarm
 
@@ -21,12 +21,6 @@ swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "ver
 logger.info('Init Manager')
 manager = swarm.Manager()
 
-v2 = Blueprint('v2', __name__)
-logger.info('Blueprint: ' + str(v2.name))
-
-@v2.route('/')
-def index2():
-    return json.dumps({'msg': 'This is Gindrop v2'})
 
 @app.route('/')
 def index():
@@ -35,15 +29,24 @@ def index():
 
 
 @app.route('/configs', methods=['GET'])
-@v2.route('/configs', methods=['GET'])
 def get_configs():
     """
     Retrieve all registerd configurations
     ---
-    parameters: []
+    parameters:
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: Configuration taken from encrypted ones
     responses: {}
      """
-    cs = manager.get_configs()
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        cs = manager.get_secrets()
+    else:
+        cs = manager.get_configs()
     data = {'configs': []}
     for c in cs:
         data["configs"].append(c.attrs)
@@ -60,10 +63,20 @@ def get_config(config_name):
         name: config_name
         required: true
         description: "Name of the configuration to retrieve"
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: Configuration taken from encrypted ones
     responses: {}
      """
     logger.info("Reading config: " + config_name)
-    c = manager.get_config_by_name(config_name)
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        c = manager.get_secret_by_name(config_name)
+    else:
+        c = manager.get_config_by_name(config_name)
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
@@ -81,14 +94,25 @@ def set_config(config_name):
         name: file
         type: file
         required: true
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: Configuration stored as encrypted
     consumes:
       - application/json
     responses: {}
      """
     logger.info("Writing config: " + config_name)
-    #labels = request.args.get('labels', False)
-    #logger.info("Optional labels: " + labels)
-    c = manager.set_config(config_name, request.files['file'].read(), "")
+    # labels = request.args.get('labels', False)
+    # logger.info("Optional labels: " + labels)
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        c = manager.set_secret(config_name, request.files['file'].read(), "")
+    else:
+        c = manager.set_config(config_name, request.files['file'].read(), "")
+
     return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
@@ -102,12 +126,56 @@ def rem_config(config_name):
         name: config_name
         type: string
         required: true
+      - in: query
+        name: crypt
+        required: true
+        schema:
+          type: boolean
+        description: Configuration deleted from encrypted ones
     consumes:
       - application/json
     responses: {}
      """
     logger.info("Delete config: " + config_name)
-    ret = manager.rem_config(config_name)
+    sec = request.args.get('crypt', 'false')
+    if sec == 'true':
+        ret = manager.rem_secret(config_name)
+    else:
+        ret = manager.rem_config(config_name)
+
     return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
 
-app.register_blueprint(v2, url_prefix='/v2')
+
+@app.route('/deploy/<string:service_name>', methods=['PUT'])
+def do_deploy(service_name):
+    """
+    Deploy a new service
+    ---
+    parameters:
+      - in: path
+        name: service_name
+        type: string
+        required: true
+        description: name assigned to the deployed service
+      - in: formData
+        name: file
+        type: file
+        required: true
+        description: file containing deployment parameters
+      - in: query
+        name: type
+        required: true
+        schema:
+          type: string
+          enum:
+            - "DockerSwarm"
+        description: type of deployment file
+    consumes:
+      - application/json
+    responses: {}
+     """
+    data = request.files['file'].read()
+
+    jdata = manager.deploy(data)
+
+    return app.response_class(response=jdata, status=200, mimetype='application/json')
