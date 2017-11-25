@@ -5,16 +5,13 @@ from flask import Flask, Blueprint, request, redirect, url_for
 from flasgger import Swagger
 from . import core, swarm
 
-#aliases:
+# aliases:
 logger = logging.getLogger(__name__)
 config = core.config
 
 logger.info('Init Flask ')
 app = Flask(__name__)
-app.config['SWAGGER'] = {
-     "title": "Gindrop - API Wrapper",
-     "uiversion": 2,
-}
+app.config['SWAGGER'] = {"title": "Gindrop - API Wrapper", "uiversion": 2}
 logger.debug(str(app.config))
 
 logger.info('Init Swagger ')

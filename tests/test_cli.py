@@ -47,10 +47,10 @@ def test_set_sigh_handler():
 def test_main():
     from gindrop import cli
 
-    class mockWsgi:
+    class mockApp:
 
-        def serve_forever(self):
+        def run(self):
             assert True
 
-    cli.http_server = mockWsgi()
+    cli.app = mockApp()
     cli.main()

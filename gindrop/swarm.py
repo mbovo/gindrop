@@ -130,27 +130,23 @@ class Manager(object):
             self.logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
             self.logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
 
-            resp = self.client.login(
-                username="admindocker",
-                password="F4c1l1t1!",
-                registry="docker.facilitylive.int",
-                reauth=True)
+            try:
+                service = self.client.services.create(
+                    image_name,
+                    command=None,
+                  # constraints=constraints,
+                  #  container_labels=container_labels,
+                    env=env,
+                  #  labels=service_labels,
+                  # mounts=mounts,
+                    name=service,
+                  #  networks=networks,
+                  #  secrets=secrets,
+                  #  configs=configs
+                )
+            except docker.errors.APIError as e:
+                self.logger.error("Unable to create service %s: %s", service, str(e))
 
-            self.logger.info("LOGIN:" + str(resp))
-
-            service = self.client.services.create(
-                image_name,
-                image=image_name,
-                constraints=constraints,
-                container_labels=container_labels,
-                env=env,
-                labels=service_labels,
-                mounts=mounts,
-                name=service,
-                networks=networks,
-                secrets=secrets,
-                configs=configs
-            )
             self.logger.info("CREATE:" + str(service))
 
         return json.dumps(service.attrs)

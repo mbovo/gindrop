@@ -31,4 +31,3 @@ class Gindrop(object):
         self.logger.info('Startup in ' + "{:1.5f}".format(self._stop - self._start) + "s")
         self.logger.info('Starting Listening on %s:%d', config.server, int(config.port))
         self._http_server.serve_forever()
-
