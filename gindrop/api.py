@@ -1,25 +1,30 @@
 from __future__ import absolute_import, division, print_function
-import logging
 import json
-from flask import Flask, request, redirect, url_for
+import logging
+from flask import Flask, Blueprint, request, redirect, url_for
 from flasgger import Swagger
-from gindrop import core, swarm
+from . import core, swarm
 
+#aliases:
 logger = logging.getLogger(__name__)
-config = core.Config()
+config = core.config
 
-logger.info('Init flask ')
+logger.info('Init Flask ')
 app = Flask(__name__)
 app.config['SWAGGER'] = {
-    "title": "Gindrop - API Wrapper",
-    "uiversion": 2,
+     "title": "Gindrop - API Wrapper",
+     "uiversion": 2,
 }
+logger.debug(str(app.config))
 
 logger.info('Init Swagger ')
 swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "version": "1.0"}})
+logger.debug(str(swagger.config))
 
-logger.info('Init Manager')
+logger.info('Init Orchestrator Backend')
 manager = swarm.Manager()
+
+v1 = Blueprint('v1', __name__)
 
 
 @app.route('/')
@@ -29,6 +34,7 @@ def index():
 
 
 @app.route('/configs', methods=['GET'])
+@v1.route('/configs', methods=['GET'])
 def get_configs():
     """
     Retrieve all registerd configurations
@@ -54,6 +60,7 @@ def get_configs():
 
 
 @app.route('/configs/<string:config_name>')
+@v1.route('/configs/<string:config_name>')
 def get_config(config_name):
     """
     Retrieve a specific configuration by name
@@ -81,6 +88,7 @@ def get_config(config_name):
 
 
 @app.route('/configs/<string:config_name>', methods=['PUT'])
+@v1.route('/configs/<string:config_name>', methods=['PUT'])
 def set_config(config_name):
     """
     Save a new config with given name
@@ -117,6 +125,7 @@ def set_config(config_name):
 
 
 @app.route('/configs/<string:config_name>', methods=['DELETE'])
+@v1.route('/configs/<string:config_name>', methods=['DELETE'])
 def rem_config(config_name):
     """
     Remove config with given name
@@ -147,6 +156,7 @@ def rem_config(config_name):
 
 
 @app.route('/deploy/<string:service_name>', methods=['PUT'])
+@v1.route('/deploy/<string:service_name>', methods=['PUT'])
 def do_deploy(service_name):
     """
     Deploy a new service
@@ -179,3 +189,6 @@ def do_deploy(service_name):
     jdata = manager.deploy(data)
 
     return app.response_class(response=jdata, status=200, mimetype='application/json')
+
+logger.info('Registering Blueprint v1')
+app.register_blueprint(v1, url_prefix='/v1')

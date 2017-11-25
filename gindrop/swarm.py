@@ -4,30 +4,32 @@ import logging
 import docker
 import json
 import yaml
-import os
 
-client = docker.from_env()
-logger = logging.getLogger(__name__)
 
 class Manager(object):
 
     # CONFIGS ######
+    def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.client = docker.from_env()
+        self.logger.info("Registered docker client " + str(self.client))
+        self.logger.debug("Docker version: " + str(self.client.version()))
 
     def get_configs(self):
-        return client.configs.list()
+        return self.client.configs.list()
 
     def get_config_by_name(self, name):
-        cs = client.configs.list(filters={'name': name})
-        logger.info("items found matching [" + name + "]:" + str(len(cs)))
+        cs = self.client.configs.list(filters={'name': name})
+        self.logger.info("items found matching [" + name + "]:" + str(len(cs)))
         if len(cs) != 1:
             raise ValueError("Name not found or not unique!")
         return cs[0]
 
     def get_config_by_id(self, id):
-        return client.configs.get(id)
+        return self.client.configs.get(id)
 
     def set_config(self, name, data, labels):
-        cid = client.configs.create(name=name, data=data)
+        cid = self.client.configs.create(name=name, data=data)
         new_c = self.get_config_by_id(cid.id)
         return new_c
 
@@ -43,20 +45,20 @@ class Manager(object):
         # SECRETS ######
 
     def get_secrets(self):
-        return client.secrets.list()
+        return self.client.secrets.list()
 
     def get_secret_by_name(self, name):
-        s = client.secrets.list(filters={'name': name})
-        logger.info("items found matching [" + name + "]:" + str(len(s)))
+        s = self.client.secrets.list(filters={'name': name})
+        self.logger.info("items found matching [" + name + "]:" + str(len(s)))
         if len(s) != 1:
             raise ValueError("Name not found or not unique!")
         return s[0]
 
     def get_secret_by_id(self, id):
-        return client.secrets.get(id)
+        return self.client.secrets.get(id)
 
     def set_secret(self, name, data, labels):
-        sid = client.secrets.create(name=name, data=data)
+        sid = self.client.secrets.create(name=name, data=data)
         new_s = self.get_secret_by_id(sid.id)
         return new_s
 
@@ -117,26 +119,26 @@ class Manager(object):
                     )
                 )
 
-            logger.info("name: " + service)
-            logger.info("image: " + image_name)
-            logger.info("constraints: " + ",".join(constraints))
-            logger.info("labels: " + ",".join(service_labels))
-            logger.info("container_labels: " + ",".join(container_labels))
-            logger.info("env: " + ",".join(env))
-            logger.info("mounts: " + ",".join(mounts))
-            logger.info("networks: " + ",".join(networks))
-            logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
-            logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
+            self.logger.info("name: " + service)
+            self.logger.info("image: " + image_name)
+            self.logger.info("constraints: " + ",".join(constraints))
+            self.logger.info("labels: " + ",".join(service_labels))
+            self.logger.info("container_labels: " + ",".join(container_labels))
+            self.logger.info("env: " + ",".join(env))
+            self.logger.info("mounts: " + ",".join(mounts))
+            self.logger.info("networks: " + ",".join(networks))
+            self.logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
+            self.logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
 
-            resp = client.login(
+            resp = self.client.login(
                 username="admindocker",
                 password="F4c1l1t1!",
                 registry="docker.facilitylive.int",
                 reauth=True)
 
-            logger.info("LOGIN:" + str(resp))
+            self.logger.info("LOGIN:" + str(resp))
 
-            service = client.services.create(
+            service = self.client.services.create(
                 image_name,
                 image=image_name,
                 constraints=constraints,
@@ -149,6 +151,6 @@ class Manager(object):
                 secrets=secrets,
                 configs=configs
             )
-            logger.info("CREATE:" + str(service))
+            self.logger.info("CREATE:" + str(service))
 
         return json.dumps(service.attrs)
