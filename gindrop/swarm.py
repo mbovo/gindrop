@@ -14,7 +14,7 @@ class Manager(object):
 
     def get_config_by_name(self, config_name):
         cs = client.configs.list(filters={'name': config_name})
-        logger.info("items found matching ["+config_name+"]:"+str(len(cs)))
+        logger.info("items found matching [" + config_name + "]:" + str(len(cs)))
         if len(cs) != 1:
             raise ValueError("Name is not unique!")
         return cs[0]
@@ -23,5 +23,5 @@ class Manager(object):
         return client.configs.get(config_id)
 
     def set_config(self, name, data, labels):
-        cid =  client.configs.create(name, data, labels)
+        cid = client.configs.create(name, data, labels)
         return self.get_config_by_id(cid)
