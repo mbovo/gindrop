@@ -186,7 +186,7 @@ def do_deploy(service_name):
     try:
         jdata = manager.deploy(data)
     except Exception as e:
-        return app.response_class(response=json.dumps({'error':str(e)}), status=500, mimetype='application/json')
+        return app.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
 
     return app.response_class(response=jdata, status=200, mimetype='application/json')
 

@@ -75,6 +75,5 @@ def test_deploy():
         file=(io.BytesIO(deploy), "deploy.yml"),
     )
     response = appclient.put('/deploy/deploy_pytest', content_type='multipart/form-data', data=data)
-    assert response.data == ''
 
     assert response.status == "200 OK"

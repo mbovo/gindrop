@@ -131,14 +131,14 @@ class Manager(object):
 
             try:
                 service = self.client.services.create(
-                    # image_name,
+                    image_name,
                     # command=None,
                     # constraints=constraints,
                     # container_labels=container_labels,
                     # env=env,
                     # labels=service_labels,
                     # mounts=mounts,
-                    # name=service,
+                    name=service
                     # networks=networks,
                     # secrets=secrets,
                     # configs=configs
