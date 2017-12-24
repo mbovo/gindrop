@@ -74,7 +74,6 @@ class Manager(object):
         # SECRETS ######
 
     def deploy(self, data):
-
         ydata = yaml.load(data)
 
         for service in ydata['services']:
@@ -132,20 +131,21 @@ class Manager(object):
 
             try:
                 service = self.client.services.create(
-                    image_name,
-                    command=None,
-                  # constraints=constraints,
-                  #  container_labels=container_labels,
-                    env=env,
-                  #  labels=service_labels,
-                  # mounts=mounts,
-                    name=service,
-                  #  networks=networks,
-                  #  secrets=secrets,
-                  #  configs=configs
+                    # image_name,
+                    # command=None,
+                    # constraints=constraints,
+                    # container_labels=container_labels,
+                    # env=env,
+                    # labels=service_labels,
+                    # mounts=mounts,
+                    # name=service,
+                    # networks=networks,
+                    # secrets=secrets,
+                    # configs=configs
                 )
             except docker.errors.APIError as e:
-                self.logger.error("Unable to create service %s: %s", service, str(e))
+                self.logger.error(e)
+                raise e
 
             self.logger.info("CREATE:" + str(service))
 

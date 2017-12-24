@@ -5,7 +5,7 @@ import os
 from gindrop import api
 
 api.app.config['TESTING'] = True
-client = api.app.test_client()
+appclient = api.app.test_client()
 do_crypt = "?crypt=true"
 
 
@@ -15,13 +15,13 @@ def test_index():
 
 
 def test_configs():
-    response = client.get('/configs')
+    response = appclient.get('/configs')
     assert response.status == "200 OK"
     assert json.loads(response.data)['configs']
 
 
 def test_secrets():
-    response = client.get('/configs' + do_crypt)
+    response = appclient.get('/configs' + do_crypt)
     assert response.status == "200 OK"
     assert json.loads(response.data)['configs']
 
@@ -39,31 +39,31 @@ def test_secret():
 def test_write_config():
 
     # delete first if any zombie is left
-    client.delete('/configs/config_pytest')
+    appclient.delete('/configs/config_pytest')
 
     data = dict(
         file=(io.BytesIO(b'Test config content'), "tmp.confg"),
     )
-    response = client.put('/configs/config_pytest', content_type='multipart/form-data', data=data)
+    response = appclient.put('/configs/config_pytest', content_type='multipart/form-data', data=data)
     assert response.status == "200 OK"
 
     # delete to cleanup
-    client.delete('/configs/config_pytest')
+    appclient.delete('/configs/config_pytest')
 
 
 def test_write_secrets():
 
     # delete first if any zombie is left
-    client.delete('/configs/config_pytest' + do_crypt)
+    appclient.delete('/configs/config_pytest' + do_crypt)
 
     data = dict(
         file=(io.BytesIO(b'Test config content'), "tmp.cfg"),
     )
-    response = client.put('/configs/config_pytest' + do_crypt, content_type='multipart/form-data', data=data)
+    response = appclient.put('/configs/config_pytest' + do_crypt, content_type='multipart/form-data', data=data)
     assert response.status == "200 OK"
 
     # delete to cleanup
-    client.delete('/configs/config_pytest' + do_crypt)
+    appclient.delete('/configs/config_pytest' + do_crypt)
 
 
 def test_deploy():
@@ -74,5 +74,7 @@ def test_deploy():
     data = dict(
         file=(io.BytesIO(deploy), "deploy.yml"),
     )
-    response = client.put('/deploy/deploy_pytest', content_type='multipart/form-data', data=data)
+    response = appclient.put('/deploy/deploy_pytest', content_type='multipart/form-data', data=data)
+    assert response.data == ''
+
     assert response.status == "200 OK"

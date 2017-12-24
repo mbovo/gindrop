@@ -183,7 +183,10 @@ def do_deploy(service_name):
      """
     data = request.files['file'].read()
 
-    jdata = manager.deploy(data)
+    try:
+        jdata = manager.deploy(data)
+    except Exception as e:
+        return app.response_class(response=json.dumps({'error':str(e)}), status=500, mimetype='application/json')
 
     return app.response_class(response=jdata, status=200, mimetype='application/json')
 
