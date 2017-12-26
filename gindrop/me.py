@@ -13,7 +13,7 @@ class Gindrop(object):
     def __init__(self):
         self._start = time.time()
         self.logger = logging.getLogger(self.__class__.__name__)
-        self._http_server = WSGIServer((config.server, int(config.port)), api.app, log=self.logger)
+        self._http_server = WSGIServer((config.server, int(config.port)), api.webapp, log=self.logger)
 
     @property
     def config(self):

@@ -4,8 +4,8 @@ import io
 import os
 from gindrop import api
 
-api.app.config['TESTING'] = True
-appclient = api.app.test_client()
+api.webapp.config['TESTING'] = True
+appclient = api.webapp.test_client()
 do_crypt = "?crypt=true"
 
 
@@ -17,13 +17,13 @@ def test_index():
 def test_configs():
     response = appclient.get('/configs')
     assert response.status == "200 OK"
-    assert json.loads(response.data)['configs']
+    assert 'configs' in json.loads(response.data)
 
 
 def test_secrets():
     response = appclient.get('/configs' + do_crypt)
     assert response.status == "200 OK"
-    assert json.loads(response.data)['configs']
+    assert 'configs' in json.loads(response.data)
 
 
 def test_config():
@@ -69,7 +69,7 @@ def test_write_secrets():
 def test_deploy():
 
     filename = os.path.join(os.path.dirname(__file__), 'files', 'deploy.yml')
-    with file(filename) as f:
+    with open(filename, 'rb') as f:
         deploy = f.read()
     data = dict(
         file=(io.BytesIO(deploy), "deploy.yml"),
@@ -77,3 +77,5 @@ def test_deploy():
     response = appclient.put('/deploy/deploy_pytest', content_type='multipart/form-data', data=data)
 
     assert response.status == "200 OK"
+
+    appclient.delete('/service/redis')

@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 config = core.config
 
 logger.info('Init Flask ')
-app = Flask(__name__)
-app.config['SWAGGER'] = {"title": "Gindrop - API Wrapper", "uiversion": 2}
-logger.debug(str(app.config))
+webapp = Flask(__name__)
+webapp.config['SWAGGER'] = {"title": "Gindrop - API Wrapper", "uiversion": 2}
+logger.debug(str(webapp.config))
 
 logger.info('Init Swagger ')
-swagger = Swagger(app, template={"info": {"title": "Gindrop - API Wrapper", "version": "1.0"}})
+swagger = Swagger(webapp, template={"info": {"title": "Gindrop - API Wrapper", "version": "1.0"}})
 logger.debug(str(swagger.config))
 
 logger.info('Init Orchestrator Backend')
@@ -24,13 +24,13 @@ manager = swarm.Manager()
 v1 = Blueprint('v1', __name__)
 
 
-@app.route('/')
+@webapp.route('/')
 def index():
     # return redirect(url_for('flasgger.apidocs'))
     return json.dumps({'msg': 'This is Gindrop'})
 
 
-@app.route('/configs', methods=['GET'])
+@webapp.route('/configs', methods=['GET'])
 @v1.route('/configs', methods=['GET'])
 def get_configs():
     """
@@ -53,10 +53,10 @@ def get_configs():
     data = {'configs': []}
     for c in cs:
         data["configs"].append(c.attrs)
-    return app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(data), status=200, mimetype='application/json')
 
 
-@app.route('/configs/<string:config_name>')
+@webapp.route('/configs/<string:config_name>')
 @v1.route('/configs/<string:config_name>')
 def get_config(config_name):
     """
@@ -81,10 +81,10 @@ def get_config(config_name):
         c = manager.get_secret_by_name(config_name)
     else:
         c = manager.get_config_by_name(config_name)
-    return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
-@app.route('/configs/<string:config_name>', methods=['PUT'])
+@webapp.route('/configs/<string:config_name>', methods=['PUT'])
 @v1.route('/configs/<string:config_name>', methods=['PUT'])
 def set_config(config_name):
     """
@@ -118,10 +118,10 @@ def set_config(config_name):
     else:
         c = manager.set_config(config_name, request.files['file'].read(), "")
 
-    return app.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(c.attrs), status=200, mimetype='application/json')
 
 
-@app.route('/configs/<string:config_name>', methods=['DELETE'])
+@webapp.route('/configs/<string:config_name>', methods=['DELETE'])
 @v1.route('/configs/<string:config_name>', methods=['DELETE'])
 def rem_config(config_name):
     """
@@ -149,10 +149,22 @@ def rem_config(config_name):
     else:
         ret = manager.rem_config(config_name)
 
-    return app.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
 
 
-@app.route('/deploy/<string:service_name>', methods=['PUT'])
+@webapp.route('/service/<string:service_name>', methods=['DELETE'])
+@v1.route('/service/<string:service_name>', methods=['DELETE'])
+def do_remove_svc(service_name):
+    try:
+        jdata = manager.rem_service(service_name)
+    except Exception as e:
+        #raise e
+        return webapp.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+
+    return webapp.response_class(response=jdata, status=200, mimetype='application/json')
+
+
+@webapp.route('/deploy/<string:service_name>', methods=['PUT'])
 @v1.route('/deploy/<string:service_name>', methods=['PUT'])
 def do_deploy(service_name):
     """
@@ -186,9 +198,11 @@ def do_deploy(service_name):
     try:
         jdata = manager.deploy(data)
     except Exception as e:
-        return app.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+        raise e
+    #    return webapp.response_class(response=json.dumps({'error': repr(e)}), status=500, mimetype='application/json')
 
-    return app.response_class(response=jdata, status=200, mimetype='application/json')
+    return webapp.response_class(response=jdata, status=200, mimetype='application/json')
+
 
 logger.info('Registering Blueprint v1')
-app.register_blueprint(v1, url_prefix='/v1')
+webapp.register_blueprint(v1, url_prefix='/v1')

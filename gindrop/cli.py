@@ -3,16 +3,16 @@ import signal
 import sys
 from . import me
 
-app = me.Gindrop()
+gin_app = me.Gindrop()
 
 
 def sig_handler(signum, stack):
     if signum in [1, 2, 3, 15]:
-        app.logger.warning('Caught signal %s, exiting.', str(signum))
-        app.stop()
+        gin_app.logger.warning('Caught signal %s, exiting.', str(signum))
+        gin_app.stop()
         sys.exit()
     else:
-        app.logger.warning('Ignoring signal %s.', str(signum))
+        gin_app.logger.warning('Ignoring signal %s.', str(signum))
     return stack
 
 
@@ -22,9 +22,9 @@ def set_sig_handler(funcname, avoid=['SIG_DFL', 'SIGSTOP', 'SIGKILL']):
             signum = getattr(signal, i)
             signal.signal(signum, funcname)
         except (OSError, RuntimeError, ValueError) as m:  # OSError for Python3, RuntimeError for 2
-            app.logger.warning("Skipping {} {}".format(i, m))
+            gin_app.logger.warning("Skipping {} {}".format(i, m))
 
 
 def main():
     set_sig_handler(sig_handler)
-    app.run()
+    gin_app.run()

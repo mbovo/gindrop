@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function
-from exceptions import ValueError
 import logging
 import docker
 import json
 import yaml
+from docker import errors as docker_errors
 
 
 class Manager(object):
@@ -38,7 +38,7 @@ class Manager(object):
         try:
             c = self.get_config_by_name(name)
             c.remove()
-        except ValueError, docker.errors.APIError:
+        except (ValueError, docker_errors.APIError):
             ret = False
         return ret
 
@@ -67,11 +67,20 @@ class Manager(object):
         try:
             s = self.get_secret_by_name(name)
             s.remove()
-        except ValueError, docker.errors.APIError:
+        except (ValueError, docker_errors.APIError):
             ret = False
         return ret
 
         # SECRETS ######
+
+    def rem_service(self, name):
+        ret = True
+        try:
+            s = self.client.services.get(name)
+            s.remove()
+        except (ValueError, docker_errors.APIError):
+            ret = False
+        return ret
 
     def deploy(self, data):
         ydata = yaml.load(data)
@@ -143,8 +152,10 @@ class Manager(object):
                     # secrets=secrets,
                     # configs=configs
                 )
-            except docker.errors.APIError as e:
+            except docker_errors.APIError as e:
                 self.logger.error(e)
+                raise e
+            except Exception as e:
                 raise e
 
             self.logger.info("CREATE:" + str(service))
