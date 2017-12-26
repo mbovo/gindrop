@@ -1,10 +1,15 @@
-
 language: python
 python:
   - 2.7
   - 3.6
-install: pip install -r requirements.txt
-script: pytest --pep8 --cov=gindrop --cov-report term-missing
+
+before_script: 
+  - pip install -r requirements.txt
+
+script: 
+  - pytest --pep8 --cov=gindrop --cov-report term-missing
+
 after_success: coveralls
+
 notifications:
   email: false
