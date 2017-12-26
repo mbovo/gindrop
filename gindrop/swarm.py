@@ -82,82 +82,85 @@ class Manager(object):
             ret = False
         return ret
 
+    def add_service(self, service_name, ydata):
+
+        constraints = ydata['deploy'].get('placement', {}).get('constraints', [])
+        image_name = ydata['image']
+        service_labels = ydata['deploy'].get('labels', [])
+        container_labels = ydata.get('labels', [])
+        env = ydata.get('environment', [])
+
+        mounts = []
+        for volk in ydata.get('volumes', []):
+            mnt = volk['source']
+            mnt += ":" + volk['target']
+            mnt += ":rw"
+            mounts.append(mnt)
+
+        networks = ydata.get('networks', [])
+
+        secrets_list = ydata.get('secrets', [])
+        configs_list = ydata.get('configs', [])
+
+        secrets = []
+        for skey in secrets_list:
+            sec = self.get_secret_by_name(skey['source'])
+            secrets.append(
+                docker.types.SecretReference(
+                    sec.id,
+                    skey,
+                    skey['target']
+                )
+            )
+
+        configs = []
+        for ckey in configs_list:
+            cnf = self.get_secret_by_name(ckey['source'])
+            secrets.append(
+                docker.types.ConfigReference(
+                    cnf.id,
+                    ckey,
+                    ckey['target']
+                )
+            )
+
+        self.logger.info("name: " + service_name)
+        self.logger.info("image: " + image_name)
+        self.logger.info("constraints: " + ",".join(constraints))
+        self.logger.info("labels: " + ",".join(service_labels))
+        self.logger.info("container_labels: " + ",".join(container_labels))
+        self.logger.info("env: " + ",".join(env))
+        self.logger.info("mounts: " + ",".join(mounts))
+        self.logger.info("networks: " + ",".join(networks))
+        self.logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
+        self.logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
+        try:
+            service = self.client.services.create(
+                image_name,
+                command=None,
+                constraints=constraints,
+                container_labels=container_labels,
+                env=env,
+                labels=service_labels,
+                mounts=mounts,
+                name=service_name,
+                networks=networks,
+                secrets=secrets,
+                configs=configs
+            )
+        except docker_errors.APIError as e:
+            self.logger.error(e)
+            raise e
+        except Exception as e:
+            raise e
+
+        self.logger.info("CREATED:" + str(service))
+        return service
+
     def deploy(self, data):
         ydata = yaml.load(data)
 
         for service in ydata['services']:
+            srv_obj = self.add_service(service, ydata['services'][service])
 
-            constraints = ydata['services'][service]['deploy'].get('placement', {}).get('constraints', [])
-            image_name = ydata['services'][service]['image']
-            service_labels = ydata['services'][service]['deploy'].get('labels', [])
-            container_labels = ydata['services'][service].get('labels', [])
-            env = ydata['services'][service].get('environment', [])
-
-            mounts = []
-            for volk in ydata['services'][service].get('volumes', []):
-                mnt = volk['source']
-                mnt += ":" + volk['target']
-                mnt += ":rw"
-                mounts.append(mnt)
-
-            networks = ydata['services'][service].get('networks', [])
-
-            secrets_list = ydata['services'][service].get('secrets', [])
-            configs_list = ydata['services'][service].get('configs', [])
-
-            secrets = []
-            for skey in secrets_list:
-                sec = self.get_secret_by_name(skey['source'])
-                secrets.append(
-                    docker.types.SecretReference(
-                        sec.id,
-                        skey,
-                        skey['target']
-                    )
-                )
-
-            configs = []
-            for ckey in configs_list:
-                cnf = self.get_secret_by_name(ckey['source'])
-                secrets.append(
-                    docker.types.ConfigReference(
-                        cnf.id,
-                        ckey,
-                        ckey['target']
-                    )
-                )
-
-            self.logger.info("name: " + service)
-            self.logger.info("image: " + image_name)
-            self.logger.info("constraints: " + ",".join(constraints))
-            self.logger.info("labels: " + ",".join(service_labels))
-            self.logger.info("container_labels: " + ",".join(container_labels))
-            self.logger.info("env: " + ",".join(env))
-            self.logger.info("mounts: " + ",".join(mounts))
-            self.logger.info("networks: " + ",".join(networks))
-            self.logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
-            self.logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
-
-            try:
-                service = self.client.services.create(
-                    image_name,
-                    # command=None,
-                    # constraints=constraints,
-                    # container_labels=container_labels,
-                    # env=env,
-                    # labels=service_labels,
-                    # mounts=mounts,
-                    name=service
-                    # networks=networks,
-                    # secrets=secrets,
-                    # configs=configs
-                )
-            except docker_errors.APIError as e:
-                self.logger.error(e)
-                raise e
-            except Exception as e:
-                raise e
-
-            self.logger.info("CREATE:" + str(service))
-
-        return json.dumps(service.attrs)
+        return json.dumps(srv_obj.attrs)
