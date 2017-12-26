@@ -3,6 +3,7 @@ import logging
 import docker
 import json
 import yaml
+import pprint
 from docker import errors as docker_errors
 
 
@@ -86,9 +87,9 @@ class Manager(object):
 
         constraints = ydata['deploy'].get('placement', {}).get('constraints', [])
         image_name = ydata['image']
-        service_labels = ydata['deploy'].get('labels', [])
-        container_labels = ydata.get('labels', [])
-        env = ydata.get('environment', [])
+        service_labels = ydata['deploy'].get('labels', None)
+        container_labels = ydata.get('labels', None)
+        env = ydata.get('environment', None)
 
         mounts = []
         for volk in ydata.get('volumes', []):
@@ -97,7 +98,7 @@ class Manager(object):
             mnt += ":rw"
             mounts.append(mnt)
 
-        networks = ydata.get('networks', [])
+        networks = ydata.get('networks', None)
 
         secrets_list = ydata.get('secrets', [])
         configs_list = ydata.get('configs', [])
@@ -124,16 +125,22 @@ class Manager(object):
                 )
             )
 
-        self.logger.info("name: " + service_name)
-        self.logger.info("image: " + image_name)
-        self.logger.info("constraints: " + ",".join(constraints))
-        self.logger.info("labels: " + ",".join(service_labels))
-        self.logger.info("container_labels: " + ",".join(container_labels))
-        self.logger.info("env: " + ",".join(env))
-        self.logger.info("mounts: " + ",".join(mounts))
-        self.logger.info("networks: " + ",".join(networks))
-        self.logger.info("secrets: " + ",".join([x['SecretID'] for x in secrets]))
-        self.logger.info("configs: " + ",".join([x['ConfigID'] for x in configs]))
+        logstr = "Creating Service with data:\n" \
+                 "\tname: {}\n" \
+                 "\timage: {}\n" \
+                 "\tconstraints: {}\n" \
+                 "\tlabels: {}\n" \
+                 "\tcontainer_labels: {}\n" \
+                 "\tenv: {}\n" \
+                 "\tmounts: {}\n" \
+                 "\tnetworks: {}\n" \
+                 "\tsecrets: {}\n" \
+                 "\tconfigs: {}" \
+                 "".format(service_name, image_name, constraints, service_labels,
+                           container_labels, env, mounts, networks,
+                           ",".join([x['SecretID'] for x in secrets]),
+                           ",".join([x['ConfigID'] for x in configs]))
+        self.logger.info(logstr)
         try:
             service = self.client.services.create(
                 image_name,
@@ -157,8 +164,24 @@ class Manager(object):
         self.logger.info("CREATED:" + str(service))
         return service
 
+    def add_network(self, net_name, ydata):
+        if ('external' in ydata) and (ydata['external'] is True):
+            return None
+        try:
+            net = self.client.networks.create(net_name, driver='overlay')
+        except docker_errors.APIError as e:
+            self.logger.error(e)
+            raise e
+        except Exception as e:
+            raise e
+
+        return net
+
     def deploy(self, data):
         ydata = yaml.load(data)
+
+        for network in ydata['networks']:
+            net_obj = self.add_network(network, ydata['networks'][network])
 
         for service in ydata['services']:
             srv_obj = self.add_service(service, ydata['services'][service])

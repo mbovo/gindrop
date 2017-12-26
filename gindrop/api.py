@@ -158,7 +158,7 @@ def do_remove_svc(service_name):
     try:
         jdata = manager.rem_service(service_name)
     except Exception as e:
-        #raise e
+        # raise e
         return webapp.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
 
     return webapp.response_class(response=jdata, status=200, mimetype='application/json')

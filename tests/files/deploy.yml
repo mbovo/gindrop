@@ -17,5 +17,5 @@ services:
         target: /data
 
 networks:
-  flservice:
+  mynet:
     external: false
