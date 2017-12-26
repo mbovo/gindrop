@@ -1,6 +1,7 @@
 import pytest
 from gindrop import me
 
+
 def test_success():
     assert True
 
@@ -47,10 +48,10 @@ def test_set_sigh_handler():
 def test_main():
     from gindrop import cli
 
-    class mockApp(me.Gindrop):
+    class MockApp(me.Gindrop):
 
         def run(self):
             assert True
 
-    cli.gin_app = mockApp()
+    cli.gin_app = MockApp()
     cli.main()
