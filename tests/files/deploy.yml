@@ -1,0 +1,21 @@
+version: "3.3"
+services:
+
+  redis:
+    deploy:
+      replicas: 1
+      placement:
+        constraints: []
+    image: redis:4.0.1-alpine
+    networks:
+      - mynet
+    ports:
+      - "6379:6379"
+    volumes:
+      - type: bind
+        source: /exported_01/docker_01/redis
+        target: /data
+
+networks:
+  flservice:
+    external: false

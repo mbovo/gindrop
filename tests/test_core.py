@@ -37,12 +37,12 @@ def test_Config():
         assert type(e) == KeyError
 
 
-def test_Orchestrator():
+# def test_Orchestrator():#
 
-    class myWrap:
-        def method(self, str):
-            return str
+#    class myWrap:
+#        def method(self, str):
+#            return str
 
-    import gindrop.core
-    o = gindrop.core.Orchestrator(myWrap())
-    assert o.method('hallo') == 'hallo'
+#    import gindrop.core
+#    o = gindrop.core.Orchestrator(myWrap())
+#    assert o.method('hallo') == 'hallo'

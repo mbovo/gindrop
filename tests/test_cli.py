@@ -1,5 +1,5 @@
 import pytest
-
+from gindrop import me
 
 def test_success():
     assert True
@@ -47,10 +47,10 @@ def test_set_sigh_handler():
 def test_main():
     from gindrop import cli
 
-    class mockWsgi:
+    class mockApp(me.Gindrop):
 
-        def serve_forever(self):
+        def run(self):
             assert True
 
-    cli.http_server = mockWsgi()
+    cli.gin_app = mockApp()
     cli.main()
