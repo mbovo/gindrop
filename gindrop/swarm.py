@@ -3,7 +3,6 @@ import logging
 import docker
 import json
 import yaml
-import pprint
 from docker import errors as docker_errors
 
 
@@ -54,6 +53,25 @@ class Manager(object):
         if len(s) != 1:
             raise ValueError("Name not found or not unique!")
         return s[0]
+
+    def get_network(self, name=None, id=None):
+        n = []
+        if name:
+            n = self.client.networks.list(filters={'name': name})
+            self.logger.info("Found {} networks matching name={}".format(len(n), name))
+        if id:
+            n = self.client.networks.list(filters={'id': id})
+            self.logger.info("Found {} networks matching name={}".format(len(n), name))
+        if len(n) != 1:
+            raise ValueError("Name not found or not unique!")
+        return n[0]
+
+    def get_networks(self):
+        nl = self.client.networks.list()
+        l = {}
+        for net in nl:
+            l[net.short_id] = net.attrs
+        return l
 
     def get_secret_by_id(self, id):
         return self.client.secrets.get(id)
@@ -163,6 +181,16 @@ class Manager(object):
 
         self.logger.info("CREATED:" + str(service))
         return service
+
+    def rem_network(self, name):
+        try:
+            net = self.get_network(name)
+            self.logger.info("Deleting network {}".format(net.short_id))
+            net.remove()
+        except docker_errors.APIError as e:
+            self.logger.error(e)
+            return False
+        return True
 
     def add_network(self, net_name, ydata):
         if ('external' in ydata) and (ydata['external'] is True):

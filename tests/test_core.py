@@ -10,6 +10,7 @@ def test_Config():
     os.environ['GINDROP_PORT'] = '8080'
     os.environ['GINDROP_LOG_LEVEL'] = 'DEBUG'
     os.environ['GINDROP_STOP_TIMEOUT'] = '20'
+    os.environ['GINDROP_UNKNOWN_CONFIG'] = 'something'
 
     # Load object
     conf = gindrop.core.Config()

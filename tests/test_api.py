@@ -26,12 +26,12 @@ def test_secrets():
     assert 'configs' in json.loads(response.data)
 
 
-def test_config():
+def test_failed_config():
     with pytest.raises(ValueError):
         j = api.manager.get_config_by_name("TestNotExistingConfig")
 
 
-def test_secret():
+def test_failed_secret():
     with pytest.raises(ValueError):
         j = api.manager.get_secret_by_name("TestNotExistingConfig")
 
@@ -47,9 +47,6 @@ def test_write_config():
     response = appclient.put('/configs/config_pytest', content_type='multipart/form-data', data=data)
     assert response.status == "200 OK"
 
-    # delete to cleanup
-    appclient.delete('/configs/config_pytest')
-
 
 def test_write_secrets():
 
@@ -62,8 +59,23 @@ def test_write_secrets():
     response = appclient.put('/configs/config_pytest' + do_crypt, content_type='multipart/form-data', data=data)
     assert response.status == "200 OK"
 
-    # delete to cleanup
+
+def test_config():
+    response = appclient.get('/configs/config_pytest')
+    assert response.status == "200 OK"
+
+
+def test_secret():
+    response = appclient.get('/configs/config_pytest' + do_crypt)
+    assert response.status == "200 OK"
+
+
+def test_delete_secret():
     appclient.delete('/configs/config_pytest' + do_crypt)
+
+
+def test_delete_config():
+    appclient.delete('/configs/config_pytest')
 
 
 def test_deploy():
@@ -79,3 +91,18 @@ def test_deploy():
     assert response.status == "200 OK"
 
     appclient.delete('/service/redis')
+
+
+def test_networks():
+    response = appclient.get('/network')
+    assert response.status == "200 OK"
+
+
+def test_network():
+    with pytest.raises(ValueError):
+        j = api.manager.get_network(name="TestNotExisting")
+
+
+def test_rem_network():
+    response = appclient.delete('/network/mynet')
+    assert response.status == "200 OK"

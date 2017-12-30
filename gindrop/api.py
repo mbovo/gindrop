@@ -27,7 +27,11 @@ v1 = Blueprint('v1', __name__)
 @webapp.route('/')
 def index():
     # return redirect(url_for('flasgger.apidocs'))
-    return json.dumps({'msg': 'This is Gindrop'})
+    ret = {
+        'msg': 'This is Gindrop'
+        # 'swagger': url_for('flasgger.apidocs')
+    }
+    return json.dumps(ret)
 
 
 @webapp.route('/configs', methods=['GET'])
@@ -152,9 +156,81 @@ def rem_config(config_name):
     return webapp.response_class(response=json.dumps(ret), status=200, mimetype='application/json')
 
 
+@webapp.route('/network', methods=['GET'])
+@v1.route('/network', methods=['GET'])
+def list_networks():
+    """
+    Retrieve all registerd networks
+    ---
+    parameters: {}
+    responses: {}
+     """
+    try:
+        j = manager.get_networks()
+    except Exception as e:
+        return webapp.response_class(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(j), status=200, mimetype='application/json')
+
+
+@webapp.route('/network/<string:net_name>', methods=['GET'])
+@v1.route('/network/<string:net_name>', methods=['GET'])
+def get_network(net_name):
+    """
+    Get info about a network with given name
+    ---
+    parameters:
+      - in: path
+        name: net_name
+        type: string
+        required: true
+    consumes:
+      - application/json
+    responses: {}
+     """
+    try:
+        j = manager.get_network(name=net_name)
+    except Exception as e:
+        return webapp.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(j.attrs), status=200, mimetype='application/json')
+
+
+@webapp.route('/network/<string:net_name>', methods=['DELETE'])
+@v1.route('/network/<string:net_name>', methods=['DELETE'])
+def del_network(net_name):
+    """
+    Remove network with given name
+    ---
+    parameters:
+      - in: path
+        name: net_name
+        type: string
+        required: true
+    consumes:
+      - application/json
+    responses: {}
+     """
+    try:
+        j = manager.rem_network(name=net_name)
+    except Exception as e:
+        return webapp.response_class(response=json.dumps({'error': str(e)}), status=500, mimetype='application/json')
+    return webapp.response_class(response=json.dumps(j), status=200, mimetype='application/json')
+
+
 @webapp.route('/service/<string:service_name>', methods=['DELETE'])
 @v1.route('/service/<string:service_name>', methods=['DELETE'])
 def do_remove_svc(service_name):
+    """
+    Remove service with given name
+    ---
+    parameters:
+      - in: path
+        name: service_name
+        type: string
+        required: true
+    consumes:
+      - application/json
+    responses: {}
+     """
     try:
         jdata = manager.rem_service(service_name)
     except Exception as e:
