@@ -208,10 +208,30 @@ class Manager(object):
     def deploy(self, data):
         ydata = yaml.load(data)
 
-        for network in ydata['networks']:
-            net_obj = self.add_network(network, ydata['networks'][network])
+        res = {}
+        i = 0
+        # if 'secrets' in ydata:
+        #     for secret in ydata['secrets']:
+        #         sec_obj = self.set_secret(secret, ydata['secrets'][secret])
+        #         res['sec_' + str(i)] = sec_obj.attrs
+        #         i += 1
+        # i = 0
+        # if 'configs' in ydata:
+        #     for config in ydata['configs']:
+        #         conf_obj = self.set_config(config, ydata['configs'][config])
+        #         res['conf_' + str(i)] = conf_obj.attrs
+        #         i += 1
+        # i = 0
+        if 'networks' in ydata:
+            for network in ydata['networks']:
+                net_obj = self.add_network(network, ydata['networks'][network])
+                res['net_' + str(i)] = net_obj.attrs
+                i += 1
 
+        i = 0
         for service in ydata['services']:
             srv_obj = self.add_service(service, ydata['services'][service])
+            res['srv_' + str(i)] = srv_obj.attrs
+            i += 1
 
-        return json.dumps(srv_obj.attrs)
+        return json.dumps(res)
