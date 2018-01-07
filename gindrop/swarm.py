@@ -22,7 +22,7 @@ class Manager(object):
         cs = self.client.configs.list(filters={'name': name})
         self.logger.info("items found matching [" + name + "]:" + str(len(cs)))
         if len(cs) != 1:
-            raise ValueError("Name not found or not unique!")
+            raise ValueError("Config not found or not unique [{}]!".format(name))
         return cs[0]
 
     def get_config_by_id(self, id):
@@ -51,7 +51,7 @@ class Manager(object):
         s = self.client.secrets.list(filters={'name': name})
         self.logger.info("items found matching [" + name + "]:" + str(len(s)))
         if len(s) != 1:
-            raise ValueError("Name not found or not unique!")
+            raise ValueError("Secret not found or not unique [{}]!".format(name))
         return s[0]
 
     def get_network(self, name=None, id=None):
@@ -61,9 +61,9 @@ class Manager(object):
             self.logger.info("Found {} networks matching name={}".format(len(n), name))
         if id:
             n = self.client.networks.list(filters={'id': id})
-            self.logger.info("Found {} networks matching name={}".format(len(n), name))
+            self.logger.info("Found {} networks matching id={}".format(len(n), id))
         if len(n) != 1:
-            raise ValueError("Name not found or not unique!")
+            raise ValueError("Network not found or not unique [{}:{}]!".format(name, id))
         return n[0]
 
     def get_networks(self):
@@ -210,27 +210,28 @@ class Manager(object):
 
         res = {}
 
-        funx_map = {
-            'secrets': self.set_config,
-            'configs': self.set_config,
-            'networks': self.add_network,
-            'services': self.add_service
-        }
+        funx_map = [
+            {'secrets': self.set_secret},
+            {'configs': self.set_config},
+            {'networks': self.add_network},
+            {'services': self.add_service}
+        ]
 
-        for obj_name in funx_map.keys():
+        for item in funx_map:
+            obj_name = item.keys()[0]
             if obj_name in ydata:
+                i = 0
                 for obj in ydata[obj_name]:
-                    i = 0
+                    if 'external' in ydata[obj_name][obj] and ydata[obj_name][obj]['external']:
+                        self.logger.info('{} [{}] is marked es external, skipping'.format(obj_name, obj))
+                        continue
                     try:
-                        if 'external' in ydata[obj_name][obj] and ydata[obj_name][obj]['external']:
-                            self.logger.info('{} [{}] is marked es external, skipping'.format(obj_name, obj))
-                            continue
-                        ret_obj = funx_map[obj_name](obj, ydata[obj_name][obj])
+                        ret_obj = item[obj_name](obj, ydata[obj_name][obj])
                         res[obj_name + str(i)] = ret_obj.attrs
-                        i += 1
                     except docker_errors.APIError as e:
                         self.logger.error('Cannot create {} [{}] due to: {}'.format(obj_name, obj, e))
+                        raise Exception('Cannot create {} [{}] due to: {}'.format(obj_name, obj, e))
                     except Exception as e:
                         self.logger.fatal('Fatal Error {}'.format(e))
-
+                    i += 1
         return json.dumps(res)
