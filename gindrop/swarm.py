@@ -222,44 +222,15 @@ class Manager(object):
                 for obj in ydata[obj_name]:
                     i = 0
                     try:
-                        if not ydata[obj_name][obj]['external']:
-                            ret_obj = funx_map[obj_name](obj, ydata[obj_name][obj])
-                            res[obj_name + str(i)] = ret_obj.attrs
-                            i += 1
-                        else:
+                        if 'external' in ydata[obj_name][obj] and ydata[obj_name][obj]['external']:
                             self.logger.info('{} [{}] is marked es external, skipping'.format(obj_name, obj))
+                            continue
+                        ret_obj = funx_map[obj_name](obj, ydata[obj_name][obj])
+                        res[obj_name + str(i)] = ret_obj.attrs
+                        i += 1
+                    except docker_errors.APIError as e:
+                        self.logger.error('Cannot create {} [{}] due to: {}'.format(obj_name, obj, e))
                     except Exception as e:
-                        self.logger.error('Cannot create {} [{}] due to: {}'.format(obj_name, obj, str(e)))
-        #
-        #
-        # # if 'secrets' in ydata:
-        # #     for secret in ydata['secrets']:
-        # #         sec_obj = self.set_secret(secret, ydata['secrets'][secret])
-        # #         res['sec_' + str(i)] = sec_obj.attrs
-        # #         i += 1
-        # # i = 0
-        # # if 'configs' in ydata:
-        # #     for config in ydata['configs']:
-        # #         conf_obj = self.set_config(config, ydata['configs'][config])
-        # #         res['conf_' + str(i)] = conf_obj.attrs
-        # #         i += 1
-        # # i = 0
-        # if 'networks' in ydata:
-        #     for network in ydata['networks']:
-        #         try:
-        #             if not ydata['networks'][network]['external']:
-        #                 net_obj = self.add_network(network, ydata['networks'][network])
-        #                 res['net_' + str(i)] = net_obj.attrs
-        #                 i += 1
-        #             else:
-        #                 self.logger.info('Network {} is marked as external, skpping'.format(network))
-        #         except Exception as e:
-        #             self.logger.error('Cannot create network {} for {}'.format(network, str(e)))
-        #
-        # i = 0
-        # for service in ydata['services']:
-        #     srv_obj = self.add_service(service, ydata['services'][service])
-        #     res['srv_' + str(i)] = srv_obj.attrs
-        #     i += 1
+                        self.logger.fatal('Fatal Error {}'.format(e))
 
         return json.dumps(res)
