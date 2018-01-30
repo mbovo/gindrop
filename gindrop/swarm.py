@@ -234,36 +234,74 @@ class Manager(object):
         if sid:
             self.logger.info('Filtering for sid {}'.format(sid))
             services = self.client.services.list(filters={'id': sid})
-        if name:
+        elif name:
             self.logger.info('Filtering for name {}'.format(name))
             services = self.client.services.list(filters={'name': name})
-        if label:
+        elif label:
             self.logger.info('Filtering for label {}'.format(label))
             services = self.client.services.list(filters={'label': label})
-
-        if not services:
+        else:
             self.logger.info('No filtering')
-            services = self.client.services.list(filters={'id': sid})
+            services = self.client.services.list()
 
+        if len(services) == 0:
+            self.logger.warning("No match found")
+            raise Exception('No match found')
+
+        self.logger.info("Found {} services, getting info".format(str(len(services))))
         for s in services:
             s_id = s.id
             sname = s.attrs['Spec']['Name']
-            containers = []
-            replicas = s.attrs['Spec']['Mode']['Replicated']['Replicas']
-            desired = len(s.tasks())
+            containers_ok = []
+            containers_fail = []
             current = 0
-            ts = []
+            failed = 0
+
+            if 'Replicated' not in s.attrs['Spec']['Mode']:
+                self.logger.warning('Key not found "Replicated" is a global service')
+                replicas = 'global'
+            else:
+                replicas = s.attrs['Spec']['Mode']['Replicated']['Replicas']
+
+            self.logger.info("Service ID [{}] [{}] with {} tasks".format(s_id, sname, replicas))
+
             for t in s.tasks():
-                containers.append({t['Status']['ContainerStatus']['ContainerID']: t['Status']['Message']})
+                if 'ContainerID' not in t['Status']['ContainerStatus']:
+                    t_id = ""
+                else:
+                    t_id = t['Status']['ContainerStatus']['ContainerID']
+
+                try:
+                    node_host = self.client.nodes.get(t['NodeID']).attrs['Description']['Hostname']
+                except Exception as e:
+                    self.logger.error("Unable to load Node info: {}".format(repr(e)))
+                    node_host = 'unknown'
+
+                if t['Status']['State'] == 'failed':
+                    containers_fail.append({'id': t_id,
+                                            'state': t['Status']['State'],
+                                            'desidered': t['DesiredState'],
+                                            'node': node_host
+                                            })
+                    failed += 1
+                    self.logger.debug("Failed task {} on node {}".format(t_id, node_host))
+                else:
+                    containers_ok.append({'id': t_id,
+                                          'state': t['Status']['State'],
+                                          'desidered': t['DesiredState'],
+                                          'node': node_host
+                                          })
+                    self.logger.debug("{} task {} on node {}".format(t['Status']['State'], t_id, node_host))
+
                 if t['Status']['State'] == 'running':
                     current += 1
-                ts.append(t)
             ret[s_id] = {
                 'name': sname,
                 'replicas': replicas,
-                'desired': desired,
-                'current': current,
-                # 'tasks': ts,
-                'containers': containers
+                'running': current,
+                'failed': failed,
+                'running_list': containers_ok,
+                'failed_list': containers_fail
             }
+
         return ret

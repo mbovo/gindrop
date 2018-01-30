@@ -40,6 +40,10 @@ class Config(object):
         for p in VALID_PROPERTIES:
             self.properties[p] = VALID_PROPERTIES[p]
 
+        self.properties['ver'] = '0.1'
+        self.properties['name'] = 'Gindrop'
+        self.properties['api'] = 'v1'
+
         logging.basicConfig(
             format="%(asctime)s | %(process)5d |[%(threadName)10s] | %(levelname)9s | %(name)s:%(funcName)s() "
                    "| %(message)s",

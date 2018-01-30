@@ -12,7 +12,7 @@ do_crypt = "?crypt=true"
 def test_index():
     resp = appclient.get('/')
     assert resp.status == "200 OK"
-    assert json.loads(resp.data)['msg'] == "This is Gindrop"
+    assert json.loads(resp.data)['name'] == "Gindrop"
 
 
 def test_configs():

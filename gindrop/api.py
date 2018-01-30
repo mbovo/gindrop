@@ -26,15 +26,17 @@ v1 = Blueprint('v1', __name__)
 
 @webapp.route('/')
 def index():
-    # return redirect(url_for('flasgger.apidocs'))
-    ret = {'msg': 'This is Gindrop', 'endpoints': {}}
-    for rule in webapp.url_map.iter_rules():
-        ret['endpoints'][rule.endpoint] = rule.rule
+    ret = dict()
+    ret['name'] = config['name']
+    ret['ver'] = config['ver']
+    ret['apiver'] = config['api']
+    ret['apidocs'] = url_for('flasgger.apidocs')
+    ret['apispec'] = url_for('flasgger.apispec_1')
     return webapp.response_class(response=json.dumps(ret), status=200, mimetype="application/json")
 
 
-@webapp.route("/services", methods=['GET'])
-@v1.route('/services', methods=['GET'])
+@webapp.route("/status/services", methods=['GET'])
+@v1.route('/status/services', methods=['GET'])
 def get_service():
     """
     Retrieve a list of all services
@@ -46,12 +48,27 @@ def get_service():
         schema:
           type: string
         description: "ID of the service to retrieve"
+      - in: query
+        name: name
+        required: false
+        schema:
+          type: string
+        description: "Name of the service (exact match)"
+      - in: query
+        name: label
+        required: false
+        schema:
+          type: string
+        description: "label of the service (exact match)"
     responses: {}
      """
     ret = {}
     retcode = 200
     try:
-        ret = manager.get_service(request.args.get('id', None))
+        ret = manager.get_service(request.args.get('id', None),
+                                  request.args.get('name', None),
+                                  request.args.get('label', None)
+                                  )
         # ret = manager.list_services()
     except Exception as e:
         ret = {
