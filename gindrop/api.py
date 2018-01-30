@@ -27,11 +27,39 @@ v1 = Blueprint('v1', __name__)
 @webapp.route('/')
 def index():
     # return redirect(url_for('flasgger.apidocs'))
-    ret = {
-        'msg': 'This is Gindrop'
-        # 'swagger': url_for('flasgger.apidocs')
-    }
-    return json.dumps(ret)
+    ret = {'msg': 'This is Gindrop', 'endpoints': {}}
+    for rule in webapp.url_map.iter_rules():
+        ret['endpoints'][rule.endpoint] = rule.rule
+    return webapp.response_class(response=json.dumps(ret), status=200, mimetype="application/json")
+
+
+@webapp.route("/services", methods=['GET'])
+@v1.route('/services', methods=['GET'])
+def get_service():
+    """
+    Retrieve a list of all services
+    ---
+    parameters:
+      - in: query
+        name: id
+        required: false
+        schema:
+          type: string
+        description: "ID of the service to retrieve"
+    responses: {}
+     """
+    ret = {}
+    retcode = 200
+    try:
+        ret = manager.get_service(request.args.get('id', None))
+        # ret = manager.list_services()
+    except Exception as e:
+        ret = {
+            'msg': "Error",
+            'value': repr(e)
+        }
+        retcode = 401
+    return webapp.response_class(response=json.dumps(ret), status=retcode, mimetype='application/json')
 
 
 @webapp.route('/configs', methods=['GET'])
@@ -274,7 +302,8 @@ def do_deploy(service_name):
     try:
         jdata = manager.deploy(data)
     except Exception as e:
-        return webapp.response_class(response=json.dumps({'error': repr(e)}), status=500, mimetype='application/json')
+        raise e
+    #    return webapp.response_class(response=json.dumps({'error': repr(e)}), status=500, mimetype='application/json')
 
     return webapp.response_class(response=jdata, status=200, mimetype='application/json')
 

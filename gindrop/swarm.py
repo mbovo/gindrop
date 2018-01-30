@@ -22,7 +22,7 @@ class Manager(object):
         cs = self.client.configs.list(filters={'name': name})
         self.logger.info("items found matching [" + name + "]:" + str(len(cs)))
         if len(cs) != 1:
-            raise ValueError("Config not found or not unique [{}]!".format(name))
+            raise ValueError("Name not found or not unique!")
         return cs[0]
 
     def get_config_by_id(self, id):
@@ -51,7 +51,7 @@ class Manager(object):
         s = self.client.secrets.list(filters={'name': name})
         self.logger.info("items found matching [" + name + "]:" + str(len(s)))
         if len(s) != 1:
-            raise ValueError("Secret not found or not unique [{}]!".format(name))
+            raise ValueError("Name not found or not unique!")
         return s[0]
 
     def get_network(self, name=None, id=None):
@@ -61,9 +61,9 @@ class Manager(object):
             self.logger.info("Found {} networks matching name={}".format(len(n), name))
         if id:
             n = self.client.networks.list(filters={'id': id})
-            self.logger.info("Found {} networks matching id={}".format(len(n), id))
+            self.logger.info("Found {} networks matching name={}".format(len(n), name))
         if len(n) != 1:
-            raise ValueError("Network not found or not unique [{}:{}]!".format(name, id))
+            raise ValueError("Name not found or not unique!")
         return n[0]
 
     def get_networks(self):
@@ -208,30 +208,62 @@ class Manager(object):
     def deploy(self, data):
         ydata = yaml.load(data)
 
-        res = {}
+        for network in ydata['networks']:
+            net_obj = self.add_network(network, ydata['networks'][network])
 
-        funx_map = [
-            {'secrets': self.set_secret},
-            {'configs': self.set_config},
-            {'networks': self.add_network},
-            {'services': self.add_service}
-        ]
+        for service in ydata['services']:
+            srv_obj = self.add_service(service, ydata['services'][service])
 
-        for item in funx_map:
-            obj_name = item.keys()[0]
-            if obj_name in ydata:
-                i = 0
-                for obj in ydata[obj_name]:
-                    if 'external' in ydata[obj_name][obj] and ydata[obj_name][obj]['external']:
-                        self.logger.info('{} [{}] is marked es external, skipping'.format(obj_name, obj))
-                        continue
-                    try:
-                        ret_obj = item[obj_name](obj, ydata[obj_name][obj])
-                        res[obj_name + str(i)] = ret_obj.attrs
-                    except docker_errors.APIError as e:
-                        self.logger.error('Cannot create {} [{}] due to: {}'.format(obj_name, obj, e))
-                        raise Exception('Cannot create {} [{}] due to: {}'.format(obj_name, obj, e))
-                    except Exception as e:
-                        self.logger.fatal('Fatal Error {}'.format(e))
-                    i += 1
-        return json.dumps(res)
+        return json.dumps(srv_obj.attrs)
+
+    def list_services(self):
+        ret = {}
+        for s in self.client.services.list():
+            ret[s.id] = {
+                # 'attrs': s.attrs,
+                'name': s.attrs['Spec']['Name'],
+                'replicas': s.attrs['Spec']['Mode']['Replicated']['Replicas'],
+                'image': s.attrs['Spec']['TaskTemplate']['ContainerSpec']['Image']
+            }
+
+        return ret
+
+    def get_service(self, sid=None, name=None, label=None):
+        ret = {}
+        services = None
+        if sid:
+            self.logger.info('Filtering for sid {}'.format(sid))
+            services = self.client.services.list(filters={'id': sid})
+        if name:
+            self.logger.info('Filtering for name {}'.format(name))
+            services = self.client.services.list(filters={'name': name})
+        if label:
+            self.logger.info('Filtering for label {}'.format(label))
+            services = self.client.services.list(filters={'label': label})
+
+        if not services:
+            self.logger.info('No filtering')
+            services = self.client.services.list(filters={'id': sid})
+
+        for s in services:
+            s_id = s.id
+            sname = s.attrs['Spec']['Name']
+            containers = []
+            replicas = s.attrs['Spec']['Mode']['Replicated']['Replicas']
+            desired = len(s.tasks())
+            current = 0
+            ts = []
+            for t in s.tasks():
+                containers.append({t['Status']['ContainerStatus']['ContainerID']: t['Status']['Message']})
+                if t['Status']['State'] == 'running':
+                    current += 1
+                ts.append(t)
+            ret[s_id] = {
+                'name': sname,
+                'replicas': replicas,
+                'desired': desired,
+                'current': current,
+                # 'tasks': ts,
+                'containers': containers
+            }
+        return ret

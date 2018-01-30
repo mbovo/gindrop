@@ -14,7 +14,7 @@ class Gindrop(object):
         self._start = time.time()
         self.logger = logging.getLogger(self.__class__.__name__)
         self._http_server = WSGIServer((config.server, int(config.port)), api.webapp, log=self.logger)
-        self.stopt = 0
+        self._stop = 0
 
     @property
     def config(self):
@@ -28,7 +28,7 @@ class Gindrop(object):
         self._http_server.stop(config.stop_timeout)
 
     def run(self):
-        self._stopt = time.time()
-        self.logger.info('Startup in ' + "{:1.5f}".format(self._stopt - self._start) + "s")
+        self._stop = time.time()
+        self.logger.info('Startup in ' + "{:1.5f}".format(self._stop - self._start) + "s")
         self.logger.info('Starting Listening on %s:%d', config.server, int(config.port))
         self._http_server.serve_forever()
